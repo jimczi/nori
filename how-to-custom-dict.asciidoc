@@ -353,7 +353,7 @@ The answer should look like this:
                     "type": "word",
                     "position": 1,
                     "bytes": "[ea b7 b8 eb a3 b9]",
-                    "leftPOS": "NNG(General Noun)",
+                    "leftPOS": "NNP(General Noun)",
                     "morphemes": null,
                     "posType": "MORPHEME",
                     "positionLength": 1,
