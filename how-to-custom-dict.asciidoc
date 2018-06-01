@@ -13,12 +13,12 @@ rebuilding the original dictionary with your extra rules can:
 * Speed up the creation of the analyzer/tokenizer.
 * Speed up the analysis.
 
-===== Prerequisite
+==== Prerequisite
 
 We'll need to compile Lucene and Elasticsearch so make sure that you have `ant` and
 `gradle` and `java` installed in your system.
 
-====== Installing MeCab
+===== Installing MeCab
 
 First you need to install MeCab, you can download mecab-ko (a fork of MeCab for Korean)
 https://bitbucket.org/eunjeon/mecab-ko/downloads/mecab-0.996-ko-0.9.2.tar.gz[here].
@@ -40,7 +40,7 @@ $ mecab -v
 mecab of 0.996/ko-0.9.2
 ----
 
-====== Installing mecab-ko-dic
+===== Installing mecab-ko-dic
 
 Download the latest version of the
 https://bitbucket.org/eunjeon/mecab-ko-dic/downloads/mecab-ko-dic-2.0.3-20170922.tar.gz[mecab-ko-dic].
@@ -62,7 +62,7 @@ $ make
 $ sudo make install
 ----
 
-===== Adding custom words
+==== Adding custom words
 
 In this section we'll see how to add custom words to the original distribution
 downloaded in the previous steps.
@@ -174,7 +174,7 @@ $ tar cvzf custom-mecab-ko-dic.tar.gz mecab-ko-dic-2.0.3-20170922
 
 We'll use this archive in the next section to build the Lucene module.
 
-===== Building the Lucene's binary dictionary
+==== Building the Lucene's binary dictionary
 
 The Nori module uses a binary dictionary that is created from a mecab-ko-dic
 distribution. In this section we'll create a binary dictionary for Lucene's Korean module
@@ -203,7 +203,7 @@ with:
 ----
 
 This replaces the original dictionary with the dictionary we modified on the previous steps.
-Go to `lucene/analysis/nori`and run:
+Go to `lucene/analysis/nori` and run:
 
 [source,sh]
 ----
@@ -243,7 +243,7 @@ The jar for the custom module can be found in `lucene/build/analysis/nori/lucene
 root of the lucene checkout. Copy this file, we'll need it in the next steps.
 
 
-===== Building a custom plugin for Elasticsearch
+==== Building a custom plugin for Elasticsearch
 
 In this section we are going to build a custom version of the Elasticsearch's
 plugin for Nori that uses the Lucene's module jar produced in the previous step.
