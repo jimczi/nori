@@ -6,7 +6,7 @@ This document shows how to create a distribution that uses a custom dictionary.
 This operation is manual and requires multiple steps so don't do it if your intent
 is to add few words to the existing dictionary. This can be done in the
 https://www.elastic.co/guide/en/elasticsearch/plugins/6.x/analysis-nori-tokenizer.html[Elasticsearch's plugin] itself
-by providing a user dictionary. However if your domain vocabulary is big (several thousand),
+by providing a user dictionary. However if your domain-specific vocabulary is big (several thousand),
 rebuilding the original dictionary with your extra rules can:
 
 * Lower the memory usage compared to the user-dic approach.
