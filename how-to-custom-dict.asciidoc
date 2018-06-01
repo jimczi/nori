@@ -1,0 +1,387 @@
+=== How to use a custom dictionary in Nori
+
+Nori, the Lucene's Korean analyzer, is built from a specific version of the
+https://bitbucket.org/eunjeon/mecab-ko-dic[mecab-ko-dic].
+This document shows how to create a distribution that uses a custom dictionary.
+This operation is manual and requires multiple steps so don't do it if your intent
+is to add few words to the existing dictionary. This can be done in the
+https://www.elastic.co/guide/en/elasticsearch/plugins/6.x/analysis-nori-tokenizer.html[Elasticsearch's plugin] itself
+by providing a user dictionary. However if your domain vocabulary is big (several thousand),
+rebuilding the original dictionary with your extra rules can:
+
+* Lower the memory usage compared to the user-dic approach.
+* Speed up the creation of the analyzer/tokenizer.
+* Speed up the analysis.
+
+===== Prerequisite
+
+We'll need to compile Lucene and Elasticsearch so make sure that you have `ant` and
+`gradle` and `java` installed in your system.
+
+====== Installing MeCab
+
+First you need to install MeCab, you can download mecab-ko (a fork of MeCab for Korean)
+https://bitbucket.org/eunjeon/mecab-ko/downloads/mecab-0.996-ko-0.9.2.tar.gz[here].
+Extract the compressed archive and install MeCab by running the following
+command from the directory where the data is extracted:
+
+[source,sh]
+----
+$ ./configure
+$ make
+$ sudo make install
+----
+
+At this point you should be able to run:
+
+[source,sh]
+----
+$ mecab -v
+mecab of 0.996/ko-0.9.2
+----
+
+====== Installing mecab-ko-dic
+
+Download the latest version of the
+https://bitbucket.org/eunjeon/mecab-ko-dic/downloads/mecab-ko-dic-2.0.3-20170922.tar.gz[mecab-ko-dic].
+It's the dictionary used by Nori by default.
+Extract the compressed archive and go to the directory containing the source code:
+
+[source,sh]
+----
+$ tar xvf mecab-ko-dic-2.0.3-20170922.tar.gz
+$ cd mecab-ko-dic-2.0.3-20170922
+----
+
+Run the following command to install the dictionary:
+
+[source,sh]
+----
+$ ./configure
+$ make
+$ sudo make install
+----
+
+===== Adding custom words
+
+In this section we'll see how to add custom words to the original distribution
+downloaded in the previous steps.
+
+Create a file with a `csv` extension (`custom-words.csv` for instance) inside
+the `user-dic` directory of the mecab-ko-dic. The directory should now look
+like this:
+
+[source,sh]
+----
+$ ls
+AUTHORS           EP.csv            IC.csv            MM.csv            NNBC.csv          Person-actor.csv  README            VX.csv            XSV.csv           config.log        install-sh        model.def         unk.def
+COPYING           ETM.csv           INSTALL           Makefile          NNG.csv           Person.csv        Symbol.csv        Wikipedia.csv     aclocal.m4        config.status     left-id.def       pos-id.def        unk.dic
+ChangeLog         ETN.csv           Inflect.csv       Makefile.am       NNP.csv           Place-address.csv VA.csv            XPN.csv           autogen.sh        configure         matrix.bin        rewrite.def       user-dic
+CoinedWord.csv    Foreign.csv       J.csv             Makefile.in       NP.csv            Place-station.csv VCN.csv           XR.csv            char.bin          configure.ac      matrix.def        right-id.def
+EC.csv            Group.csv         MAG.csv           NEWS              NR.csv            Place.csv         VCP.csv           XSA.csv           char.def          dicrc             missing           sys.dic
+EF.csv            Hanja.csv         MAJ.csv           NNB.csv           NorthKorea.csv    Preanalysis.csv   VV.csv            XSN.csv           clean             feature.def       model.bin         tools
+----
+
+[source,sh]
+----
+$ ls user-dic
+README.md        custom-words.csv nnp.csv          person.csv       place.csv
+----
+
+Remove the other files `person.csv`, `place.csv` and `nnp.csv` (they contains example
+of custom entries):
+
+[source,sh]
+----
+$ rm user-dic/person.csv user-dic/place.csv user-dic/nnp.csv
+$ ls user-dic
+README.md        custom-words.csv
+----
+
+WARNING: Removing the extra files is mandatory, `place.csv` contains an entry
+that Nori cannot parse.
+
+Add your custom words in the csv file:
+
+* Add a proper noun:
+
+[source,sh]
+----
+대우,,,,NNP,*,F,대우,*,*,*,*
+구글,,,,NNP,*,T,구글,*,*,*,*
+----
+
+* Add a person:
+
+[source,sh]
+----
+까비,,,,NNP,인명,F,까비,*,*,*,*
+----
+
+* Add place names:
+
+[source,sh]
+----
+세종,,,,NNP,지명,T,세종,*,*,*,*
+세종시,,,,NNP,지명,F,세종시,Compound,*,*,세종/NNP/지명+시/NNG/*
+----
+
+If you need to add other part of speech, you can check the full list
+https://docs.google.com/spreadsheet/ccc?key=0ApcJghR6UMXxdEdURGY2YzIwb3dSZ290RFpSaUkzZ0E&usp=sharing#gid=4[here]
+
+Run the following command:
+
+[source,sh]
+----
+$ ./tools/add-userdic.sh
+----
+
+At this point the mecab-ko-dic directory should look like this:
+
+[source,sh]
+----
+$ ls
+AUTHORS               ETN.csv               MAG.csv               NNBC.csv              Place-address.csv     VCP.csv               XSV.csv               configure             missing               unk.def
+COPYING               Foreign.csv           MAJ.csv               NNG.csv               Place-station.csv     VV.csv                aclocal.m4            configure.ac          model.bin             unk.dic
+ChangeLog             Group.csv             MM.csv                NNP.csv               Place.csv             VX.csv                autogen.sh            dicrc                 model.def             user-custom-words.csv
+CoinedWord.csv        Hanja.csv             Makefile              NP.csv                Preanalysis.csv       Wikipedia.csv         char.bin              feature.def           pos-id.def            user-dic
+EC.csv                IC.csv                Makefile.am           NR.csv                README                XPN.csv               char.def              install-sh            rewrite.def
+EF.csv                INSTALL               Makefile.in           NorthKorea.csv        Symbol.csv            XR.csv                clean                 left-id.def           right-id.def
+EP.csv                Inflect.csv           NEWS                  Person-actor.csv      VA.csv                XSA.csv               config.log            matrix.bin            sys.dic
+ETM.csv               J.csv                 NNB.csv               Person.csv            VCN.csv               XSN.csv               config.status         matrix.def            tools
+----
+
+Check that the `user-custom-words.csv` file is present and that it contains
+the expanded version of your custom entries:
+
+[source,sh]
+----
+$ ls user-custom-words.csv
+$ cat user-custom-words.csv
+대우,1783,3538,4394,NNP,*,F,대우,*,*,*,*
+구글,1783,3539,3534,NNP,*,T,구글,*,*,*,*
+까비,1785,3542,5464,NNP,인명,F,까비,*,*,*,*
+세종,1786,3546,5188,NNP,지명,T,세종,*,*,*,*
+세종시,1786,3545,5100,NNP,지명,F,세종시,Compound,*,*,세종/NNP/지명+시/NNG/*
+----
+
+Create an archive of the modified dictionary with the following command:
+
+[source,sh]
+----
+$ tar cvzf custom-mecab-ko-dic.tar.gz mecab-ko-dic-2.0.3-20170922
+----
+
+We'll use this archive in the next section to build the Lucene module.
+
+===== Building the Lucene's binary dictionary
+
+The Nori module uses a binary dictionary that is created from a mecab-ko-dic
+distribution. In this section we'll create a binary dictionary for Lucene's Korean module
+using the modified distribution.
+The dictionary is built from the source and packaged inside the jar,
+so you need to checkout Lucene. We'll create a custom jar for Lucene 7.4.0
+(*not released yet, so we use 7x*):
+
+[source,sh]
+----
+$ git clone -b branch_7x https://github.com/apache/lucene-solr.git
+----
+
+Now open `lucene/analysis/nori/ivy.xml` with your favorite editor and replace the line:
+
+[source,xml]
+----
+<artifact name="mecab-ko-dic" type=".tar.gz" url="https://bitbucket.org/eunjeon/mecab-ko-dic/downloads/mecab-ko-dic-2.0.3-20170922.tar.gz" />
+----
+
+with:
+
+[source,xml]
+----
+<artifact name="mecab-ko-dic" type=".tar.gz" url="file:///change/me/custom-mecab-ko-dic.tar.gz " />
+----
+
+This replaces the original dictionary with the dictionary we modified on the previous steps.
+Go to `lucene/analysis/nori`and run:
+
+[source,sh]
+----
+$ ant regenerate
+----
+
+This will create a new binary dictionary from our new dictionary in
+`src/resources/org/apache/lucene/analysis/ko/dict/`.
+Verify that the binary dictionary is present and is different than the
+original one:
+
+[source,sh]
+----
+$ git status .
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	modified:   ivy.xml
+	modified:   src/resources/org/apache/lucene/analysis/ko/dict/TokenInfoDictionary$buffer.dat
+	modified:   src/resources/org/apache/lucene/analysis/ko/dict/TokenInfoDictionary$fst.dat
+	modified:   src/resources/org/apache/lucene/analysis/ko/dict/TokenInfoDictionary$targetMap.dat
+	modified:   src/tools/java/org/apache/lucene/analysis/ko/util/TokenInfoDictionaryBuilder.java
+
+no changes added to commit (use "git add" and/or "git commit -a")
+----
+
+We can now create a jar to distribute the module with our
+custom dictionary:
+
+[source,sh]
+----
+$ ant jar
+----
+
+The jar for the custom module can be found in `lucene/build/analysis/nori/lucene-analyzers-nori-7.4.0-SNAPSHOT.jar` from the
+root of the lucene checkout. Copy this file, we'll need it in the next steps.
+
+
+===== Building a custom plugin for Elasticsearch
+
+In this section we are going to build a custom version of the Elasticsearch's
+plugin for Nori that uses the Lucene's module jar produced in the previous step.
+We'll need to access the source of Elasticsearch so the first operation is to
+checkout the code of Elasticsearch 6.4.0 (*not released yet, so we use 6x*):
+
+[source,sh]
+----
+$ git clone -b 6.x https://github.com/elastic/elasticsearch
+----
+
+Now go to `elasticsearch/plugins/analysis-nori` and open the file `build.gradle` with
+your favorite editor. Change the following line:
+
+[source,sh]
+----
+compile "org.apache.lucene:lucene-analyzers-nori:${versions.lucene}"
+----
+
+with:
+
+[source,sh]
+----
+compile files('/change/me/lucene-analyzers-nori-7.4.0-SNAPSHOT.jar')
+----
+
+This will tell gradle to build the plugin from the modified jar we built in
+the previous step.
+
+From the `analysis-nori` directory, run the following command to produce the
+custom distribution for our plugin:
+
+[source,sh]
+----
+$ gradle assemble
+...
+BUILD SUCCESSFUL in 2m 5s
+28 actionable tasks: 28 executed
+$ ls build/distributions
+analysis-nori-6.4.0-SNAPSHOT-javadoc.jar analysis-nori-6.4.0-SNAPSHOT-sources.jar analysis-nori-6.4.0-SNAPSHOT.jar         analysis-nori-6.4.0-SNAPSHOT.pom         analysis-nori-6.4.0-SNAPSHOT.zip
+----
+
+If the command succeeded, you'll find the zip distribution in `build/distributions`
+that you can use inside Elasticsearch. Copy this file, we'll need it in the next step.
+
+
+===== Testing in Elasticsearch
+
+Download the https://snapshots.elastic.co/downloads/elasticsearch/elasticsearch-6.4.0-SNAPSHOT.tar.gz[6.4.0 version of Elasticsearch]
+(*not released yet, so we use 6.x*).
+
+Extract the distribution and run the following command from the Elasticsearch's directory:
+
+[source,sh]
+----
+./bin/elasticsearch-plugin install file:///change/me/analysis-nori-6.4.0-SNAPSHOT.zip
+----
+
+And we're done, you can now start Elasticsearch and check if the custom words are recognized:
+
+[source,sh]
+----
+./bin/elasticsearch
+----
+
+Try the Nori analyzer with:
+
+[source,json]
+----
+POST _analyze
+{
+	"text": "대우그룹",
+	"analyzer": "nori",
+	"explain": true
+}
+----
+
+The answer should look like this:
+
+[source,json]
+----
+{
+    "detail": {
+        "custom_analyzer": false,
+        "analyzer": {
+            "name": "org.apache.lucene.analysis.ko.KoreanAnalyzer",
+            "tokens": [
+                {
+                    "token": "대우",
+                    "start_offset": 0,
+                    "end_offset": 2,
+                    "type": "word",
+                    "position": 0,
+                    "bytes": "[eb 8c 80 ec 9a b0]",
+                    "leftPOS": "NNP(General Noun)",
+                    "morphemes": null,
+                    "posType": "MORPHEME",
+                    "positionLength": 1,
+                    "reading": null,
+                    "rightPOS": "NNP(Proper Noun)",
+                    "termFrequency": 1
+                },
+                {
+                    "token": "그룹",
+                    "start_offset": 2,
+                    "end_offset": 4,
+                    "type": "word",
+                    "position": 1,
+                    "bytes": "[ea b7 b8 eb a3 b9]",
+                    "leftPOS": "NNG(General Noun)",
+                    "morphemes": null,
+                    "posType": "MORPHEME",
+                    "positionLength": 1,
+                    "reading": null,
+                    "rightPOS": "NNG(General Noun)",
+                    "termFrequency": 1
+                }
+            ]
+        }
+    }
+}
+----
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
